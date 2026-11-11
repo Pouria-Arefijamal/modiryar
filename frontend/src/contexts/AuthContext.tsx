@@ -17,6 +17,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Demo mode: no backend API URL at build time (e.g. static GitHub Pages deploy)
+const DEMO_MODE = !process.env.NEXT_PUBLIC_API_URL;
+
+const DEMO_USER: User = {
+  id: "demo-admin",
+  email: "admin@modiryar.ir",
+  name: "مدیر دمو",
+  role: "admin",
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +50,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const demoLogin = async (data: LoginRequest) => {
+    if (data.email !== "admin@modiryar.ir" || data.password !== "admin123") {
+      toast.error("ایمیل یا رمز عبور اشتباه است");
+      throw new Error("invalid credentials");
+    }
+    localStorage.setItem("token", "demo-token-modiryar-admin");
+    localStorage.setItem("user", JSON.stringify(DEMO_USER));
+    setUser(DEMO_USER);
+    toast.success("خوش آمدید!");
+    router.push("/projects");
+  };
+
   const login = async (data: LoginRequest) => {
+    if (DEMO_MODE) {
+      await demoLogin(data);
+      return;
+    }
     try {
       const response = await api.post<AuthResponse>("/auth/login", data);
       const { token, user } = response.data;
@@ -59,6 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (data: RegisterRequest) => {
+    if (DEMO_MODE) {
+      toast.success("ثبت‌نام موفقیت‌آمیز بود. لطفاً وارد شوید.");
+      router.push("/login");
+      return;
+    }
     try {
       await api.post("/auth/register", data);
       toast.success("ثبت‌نام موفقیت‌آمیز بود. لطفاً وارد شوید.");

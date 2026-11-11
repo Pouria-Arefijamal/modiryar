@@ -26,7 +26,7 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/login`;
       }
     }
     return Promise.reject(error);
